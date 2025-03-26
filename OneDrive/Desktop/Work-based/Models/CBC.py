@@ -6,28 +6,21 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
 
-# 1. تحميل وتنظيف البيانات
 df = pd.read_csv("CBC data_for_meandeley_csv.csv", skiprows=1)
 
-# تنظيف أسماء الأعمدة
 df.columns = [col.strip().replace(" ", "_").replace("/", "_") for col in df.columns]
 
-# تحويل القيم الرقمية
 for col in df.columns:
     if col != 'Sex':
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-# حذف الصفوف اللي فيها نواقص
 df.dropna(inplace=True)
 
-# إنشاء عمود التصنيف: أنيميا = 1 لو الهيموجلوبين أقل من 12
 df['Label'] = df['Hemoglobin'].apply(lambda x: 1 if x < 12 else 0)
 
-# اختيار الأعمدة الرقمية فقط (بدون الأعمدة النصية وLabel)
 X = df.select_dtypes(include=['float64', 'int64']).drop(columns=['Label']).values
 y = df['Label'].values
 
-# 2. تجهيز البيانات
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
@@ -41,7 +34,6 @@ y_test_tensor = torch.tensor(y_test, dtype=torch.long)
 train_loader = DataLoader(TensorDataset(X_train_tensor, y_train_tensor), batch_size=16, shuffle=True)
 test_loader = DataLoader(TensorDataset(X_test_tensor, y_test_tensor), batch_size=16)
 
-# 3. تعريف موديل PyTorch
 class CBCNet(nn.Module):
     def __init__(self, input_dim):
         super(CBCNet, self).__init__()
@@ -59,7 +51,6 @@ model = CBCNet(input_dim=X_train.shape[1])
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-# 4. تدريب الموديل
 for epoch in range(20):
     model.train()
     total_loss = 0
@@ -72,7 +63,6 @@ for epoch in range(20):
         total_loss += loss.item()
     print(f"Epoch {epoch+1}, Loss: {total_loss:.4f}")
 
-# 5. التقييم
 model.eval()
 correct, total = 0, 0
 with torch.no_grad():
